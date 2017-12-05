@@ -1,7 +1,7 @@
 otrs3-1-18
 ==========
 
-This role will install all necessary dependencies, download otrs3.1.18, unpack and apply the base configuration. Once complete this playbook has finished, the otrs configuration can be completed at the following url:<br><br>
+This role will install all necessary dependencies, download otrs3.1.18, unpack and apply the base configuration. When this playbook has finished, the otrs configuration can be completed at the following url:<br><br>
 
 https://hostname/otrs/installer.pl
 
