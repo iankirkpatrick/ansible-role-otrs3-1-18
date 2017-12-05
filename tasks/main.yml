@@ -1,0 +1,97 @@
+    - name: Set MySQL root password before installing (defined in inventory file variable "mysql_root_pass")
+      debconf: name='mysql-server' question='mysql-server/root_password' value='{{mysql_root_pass | quote}}' vtype='password'
+
+    - name: Confirm MySQL root password before installing (defined in inventory file variable "mysql_root_pass")
+      debconf: name='mysql-server' question='mysql-server/root_password_again' value='{{mysql_root_pass | quote}}' vtype='password'
+
+    - name: Install all dependencies
+      apt: name={{ item }} state=installed
+      with_items:
+        - apache2
+        - mysql-server
+        - libdbi-perl
+        - liblwp-useragent-determined-perl
+        - libapache2-mod-perl2
+        - libnet-dns-perl
+        - libnet-smtp-ssl-perl
+        - libnet-smtp-tls-butmaintained-perl
+        - libyaml-perl
+        - libgd-text-perl
+        - libjson-xs-perl
+        - libpdf-api2-perl
+        - libtext-csv-xs-perl
+        - libxml-parser-perl
+        - libmail-imapclient-perl
+        - libgd-graph-perl
+        - libcrypt-ssleay-perl
+        - libnet-ldap-perl
+        - libnet-ssleay-perl
+        - python-mysql.connector
+        - python-mysqldb
+
+    - name: Start MySQL Service
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Check for existing OTRS installation at /opt/otrs
+      stat: path=/opt/otrs
+      register: otrs_exists
+
+    - name: Download and unarchive tarball to /tmp
+      unarchive:
+        src: https://ftp.otrs.org/pub/otrs/otrs-3.1.18.tar.gz
+        dest: /tmp
+        remote_src: yes
+      when: otrs_exists.stat.exists == False
+
+    - name: Move otrs to /opt/otrs
+      command: mv /tmp/otrs-3.1.18 /opt/otrs
+      when: otrs_exists.stat.exists == False
+
+    - name: Create OTRS user and assign to group www-data
+      user:
+        name: otrs
+        home: /opt/otrs
+        groups: www-data
+        comment: 'OTRS user'
+      when: otrs_exists.stat.exists == False
+
+    - name: Create initial OTRS configuration
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        remote_src: yes
+      with_items:
+      - { src: /opt/otrs/Kernel/Config.pm.dist, dest: /opt/otrs/Kernel/Config.pm }
+      - { src: /opt/otrs/Kernel/Config/GenericAgent.pm.dist, dest: /opt/otrs/Kernel/Config/GenericAgent.pm }
+      when: otrs_exists.stat.exists == False
+
+    - name: Set directory permissions for OTRS
+      command: /opt/otrs/bin/otrs.SetPermissions.pl --otrs-user=otrs --web-user=www-data --otrs-group=www-data --web-group=www-data /opt/otrs
+      when: otrs_exists.stat.exists == False
+
+    - name: Copy apache2 configuration with new configuration style
+      copy:
+        src: apache2-httpd.include.conf
+        dest: /opt/otrs/scripts/apache2-httpd.include.conf
+      when: otrs_exists.stat.exists == False
+
+    - name: Symbolic link to apache2 otrs.conf
+      file:
+        src: /opt/otrs/scripts/apache2-httpd.include.conf
+        dest: /etc/apache2/sites-available/otrs.conf
+        state: link
+      when: otrs_exists.stat.exists == False
+
+    - name: Enable otrs virtual host in apache2
+      command: a2ensite otrs
+      when: otrs_exists.stat.exists == False
+
+    - name: Restart Apache2 Service - Access OTRS at http://<hostname>/otrs/installer.pl
+      service:
+        name: apache2
+        state: restarted
+      when: otrs_exists.stat.exists == False
+
