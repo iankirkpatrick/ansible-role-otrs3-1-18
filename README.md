@@ -1,9 +1,9 @@
 otrs3.1.18
 ==========
 
-This role will install all necessary dependencies for otrs3.1.18, download otrs3.1.18, unpack and apply the base configuration. Once complete the otrs configuration can be completed at:<br><br>
+This role will install all necessary dependencies, download otrs3.1.18, unpack and apply the base configuration. Once complete this playbook has finished, the otrs configuration can be completed at the following url:<br><br>
 
-https://<hostname>/otrs/installer.pl
+https://hostname/otrs/installer.pl
 
 Dependencies
 ------------
@@ -15,10 +15,10 @@ otrs-host1<br>
 <br>
 [otrs-servers:vars]<br>
 ansible_connection=ssh<br>
-ansible_user=<user><br>
-ansible_ssh_pass=<userpass><br>
-ansible_become_pass=<userpass><br>
-mysql_root_pass=<mysql-root-password><br>
+ansible_user=user<br>
+ansible_ssh_pass=userpass<br>
+ansible_become_pass=userpass<br>
+mysql_root_pass=mysql-root-password<br>
 <br>
 It is recommended that you use ansible-vault encrypt <inventory-file> to encrypt the file as it includes sensitive user account information. The script can then be run with the "--ask-vault-pass" option to prompt for the vault key before executing. The mysql root password is defined in the inventory file to prevent mysql being installed without a password for root access. This password will be required later when running through the installer for otrs.
 It goes without saying that the user defined in the inventory file must have sudo permissions to allow the tasks under this role to complete successfully.
